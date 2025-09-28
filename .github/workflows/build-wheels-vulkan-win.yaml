@@ -84,6 +84,6 @@ jobs:
         with:
           files: dist/*
           # Set tag_name to <tag>-cu<cuda_version>
-          tag_name: ${{ github.ref_name }}-cu${{ env.VULKAN_VERSION }}
+          tag_name: ${{ github.ref_name }}-vulkan${{ env.VULKAN_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
