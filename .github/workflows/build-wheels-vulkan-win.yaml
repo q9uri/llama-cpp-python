@@ -21,7 +21,6 @@ jobs:
           $matrix = @{
               'os' = @('windows-2025')
               'pyver' = @("3.9", "3.10", "3.11", "3.12")
-              'cuda' = @("12.1.1", "12.2.2", "12.3.2", "12.4.1") #, "12.5.1", "12.6.1")
               'releasetag' = @("basic")
           }
 
@@ -29,7 +28,7 @@ jobs:
           Write-Output ('matrix=' + $matrixOut) >> $env:GITHUB_OUTPUT
           
   build_wheels:
-    name: Build Wheel ${{ matrix.os }} ${{ matrix.pyver }} ${{ matrix.cuda }} ${{ matrix.releasetag == 'wheels' && 'AVX2' || matrix.releasetag }}
+    name: Build Wheel ${{ matrix.os }} ${{ matrix.pyver }} ${{ matrix.releasetag == 'wheels' && 'AVX2' || matrix.releasetag }}
     needs: define_matrix
     runs-on: ${{ matrix.os }}
     strategy:
