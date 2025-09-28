@@ -1,4 +1,4 @@
-name: Build Wheels (CUDA)
+name: Build Wheels (Vulkan Win64)
 
 on: workflow_dispatch
 
@@ -8,12 +8,12 @@ permissions:
 jobs:
   define_matrix:
     name: Define Build Matrix
-    runs-on: ubuntu-22.04
+
+    runs-on: windows-2025
+
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-    defaults:
-      run:
-        shell: pwsh
+
 
     env:
       OPENBLAS_VERSION: 0.3.23
@@ -73,7 +73,7 @@ jobs:
         id: install_ninja
         run: |
           choco install ninja
-          
+
       - name: Install Dependencies
         env:
           MAMBA_DOWNLOAD_FAILFAST: "0"
