@@ -1,0 +1,90 @@
+name: Build Wheels (CUDA)
+
+on: workflow_dispatch
+
+permissions:
+  contents: write
+
+jobs:
+  define_matrix:
+    name: Define Build Matrix
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    defaults:
+      run:
+        shell: pwsh
+
+    env:
+      OPENBLAS_VERSION: 0.3.23
+      VULKAN_VERSION: 1.4.313.2
+
+    steps:
+      - name: Define Job Output
+        id: set-matrix
+        run: |
+          $matrix = @{
+              'os' = @('windows-2025')
+              'pyver' = @("3.9", "3.10", "3.11", "3.12")
+              'cuda' = @("12.1.1", "12.2.2", "12.3.2", "12.4.1") #, "12.5.1", "12.6.1")
+              'releasetag' = @("basic")
+          }
+
+          $matrixOut = ConvertTo-Json $matrix -Compress
+          Write-Output ('matrix=' + $matrixOut) >> $env:GITHUB_OUTPUT
+      
+      - name: Install Vulkan SDK
+        id: get_vulkan
+        run: |
+          curl.exe -o $env:RUNNER_TEMP/VulkanSDK-Installer.exe -L "https://sdk.lunarg.com/sdk/download/${env:VULKAN_VERSION}/windows/vulkansdk-windows-X64-${env:VULKAN_VERSION}.exe"
+          & "$env:RUNNER_TEMP\VulkanSDK-Installer.exe" --accept-licenses --default-answer --confirm-command install
+          Add-Content $env:GITHUB_ENV "VULKAN_SDK=C:\VulkanSDK\${env:VULKAN_VERSION}"
+          Add-Content $env:GITHUB_PATH "C:\VulkanSDK\${env:VULKAN_VERSION}\bin"
+      
+      - name: Install Ninja
+        id: install_ninja
+        run: |
+          choco install ninja
+          
+  build_wheels:
+    name: Build Wheel ${{ matrix.os }} ${{ matrix.pyver }} ${{ matrix.cuda }} ${{ matrix.releasetag == 'wheels' && 'AVX2' || matrix.releasetag }}
+    needs: define_matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.define_matrix.outputs.matrix) }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      CUDAVER: ${{ matrix.cuda }}
+      AVXVER: ${{ matrix.releasetag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.pyver }}
+          cache: 'pip'
+
+      - name: Install Dependencies
+        env:
+          MAMBA_DOWNLOAD_FAILFAST: "0"
+          MAMBA_NO_LOW_SPEED_LIMIT: "1"
+        run: |
+        
+          python -m pip install build wheel
+      - name: Build Wheel
+        run: |
+          $env:CMAKE_ARGS = "-DGGML_VULKAN=on"
+          python -m build --wheel
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          # Set tag_name to <tag>-cu<cuda_version>
+          tag_name: ${{ github.ref_name }}-cu${{ env.VULKAN_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
