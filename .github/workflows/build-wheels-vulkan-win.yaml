@@ -14,11 +14,6 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
-
-    env:
-      OPENBLAS_VERSION: 0.3.23
-      VULKAN_VERSION: 1.4.313.2
-
     steps:
       - name: Define Job Output
         id: set-matrix
@@ -43,8 +38,7 @@ jobs:
       run:
         shell: pwsh
     env:
-      CUDAVER: ${{ matrix.cuda }}
-      AVXVER: ${{ matrix.releasetag }}
+      VULKAN_VERSION: 1.4.313.2
 
     steps:
       - uses: actions/checkout@v4
