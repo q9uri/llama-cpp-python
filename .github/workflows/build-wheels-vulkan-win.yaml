@@ -32,7 +32,12 @@ jobs:
 
           $matrixOut = ConvertTo-Json $matrix -Compress
           Write-Output ('matrix=' + $matrixOut) >> $env:GITHUB_OUTPUT
-      
+          
+      - name: libCURL
+        id: get_libcurl
+        uses: ./.github/actions/windows-setup-curl
+
+
       - name: Install Vulkan SDK
         id: get_vulkan
         run: |
